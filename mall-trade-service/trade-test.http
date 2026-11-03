@@ -1,0 +1,38 @@
+### 交易服务通过 Feign 查询商品信息
+GET http://localhost:8082/internal/remote-products/1
+
+### 第一次扣减 2 件
+POST http://localhost:8082/internal/remote-products/1/stock/deduct
+Content-Type: application/json
+
+{
+  "requestId": "order-demo-20261028-001",
+  "quantity": 2
+}
+
+### 使用相同 requestId 重试
+POST http://localhost:8082/internal/remote-products/1/stock/deduct
+Content-Type: application/json
+
+{
+  "requestId": "order-demo-20261028-001",
+  "quantity": 2
+}
+
+### 取消订单时恢复 2 件库存
+POST http://localhost:8082/internal/remote-products/1/stock/restore
+Content-Type: application/json
+
+{
+  "requestId": "order-demo-20261028-001:restore",
+  "quantity": 2
+}
+
+### 重复恢复同一笔库存操作
+POST http://localhost:8082/internal/remote-products/1/stock/restore
+Content-Type: application/json
+
+{
+  "requestId": "order-demo-20261028-001:restore",
+  "quantity": 2
+}

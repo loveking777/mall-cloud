@@ -1,0 +1,33 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: mall-product-service
+
+  datasource:
+    url: "jdbc:mysql://localhost:3306/mall_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai"
+    username: "root"
+    password: "123456"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+          host: localhost
+          port: 6379
+          database: 0
+          timeout: 3s
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,metrics,caches"

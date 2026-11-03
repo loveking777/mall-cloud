@@ -1,0 +1,10 @@
+# 统一换行符，避免 Windows 与 Linux 之间来回转换
+* text=auto eol=lf
+
+# Windows 脚本保持 CRLF
+*.cmd text eol=crlf
+
+# 二进制文件不参与换行转换
+*.jar binary
+*.png binary
+*.jpg binary

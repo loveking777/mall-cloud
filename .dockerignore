@@ -1,0 +1,19 @@
+.git
+.gitignore
+.idea
+
+# 文档不参与镜像构建
+docs
+README.md
+
+# 只保留各模块 target 下的可执行 jar，
+# 排除编译中间产物，减小构建上下文
+**/target/classes
+**/target/test-classes
+**/target/maven-status
+**/target/generated-sources
+**/target/generated-test-sources
+**/target/generated-test-classes
+**/target/surefire-reports
+**/target/archive-tmp
+**/target/*.jar.original

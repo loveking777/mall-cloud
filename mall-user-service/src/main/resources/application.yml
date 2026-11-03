@@ -1,0 +1,35 @@
+server:
+  port: 8083
+
+spring:
+  application:
+    name: mall-user-service
+
+  datasource:
+    # 用户表在 mall_db.mall_user，和单体保持一致
+    url: "jdbc:mysql://localhost:3306/mall_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai"
+    username: "root"
+    password: "123456"
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+
+mall:
+  jwt:
+    # 必须和网关使用同一个密钥，否则网关验签失败。
+    # 通过环境变量注入：Base64 编码，解码后至少 32 字节。
+    secret-base64: ${MALL_JWT_SECRET_BASE64:}
+    expiration-seconds: 7200
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: "health,info"

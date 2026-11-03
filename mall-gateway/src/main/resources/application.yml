@@ -1,0 +1,16 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: mall-gateway
+
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+
+mall:
+  jwt:
+    # 必须和 mall-user-service 使用同一个密钥，否则验签失败
+    secret-base64: ${MALL_JWT_SECRET_BASE64:}

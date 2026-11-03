@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  # 允许在 GitHub 页面上手动触发
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build & Test (JDK 17)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          # 缓存 Maven 依赖，第二次以后构建会快很多
+          cache: maven
+
+      - name: Build and run unit tests
+        # -B 批量模式（日志更干净）
+        # -ntp 不打印下载进度
+        # verify 会编译 + 跑单元测试 + 打包
+        run: mvn -B -ntp verify

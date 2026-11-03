@@ -1,0 +1,29 @@
+### 查询商品列表
+GET http://localhost:8081/product
+
+### 查询商品详情
+GET http://localhost:8081/product/1
+
+### 分页查询
+GET http://localhost:8081/product/page?pageNum=1&pageSize=10
+
+### 按关键词搜索
+GET http://localhost:8081/product/page?pageNum=1&pageSize=10&keyword=测试
+
+### 按状态筛选
+GET http://localhost:8081/product/page?pageNum=1&pageSize=10&status=1
+
+### 1. 第一次查询商品详情
+GET http://localhost:8081/product/1
+
+### 2. 再次查询同一个商品详情
+GET http://localhost:8081/product/1
+
+### 3. 查询第一页
+GET http://localhost:8081/product/page?pageNum=1&pageSize=10
+
+### 4. 重复查询第一页
+GET http://localhost:8081/product/page?pageNum=1&pageSize=10
+
+### 5. 按关键词搜索
+GET http://localhost:8081/product/page?pageNum=1&pageSize=10&keyword=测试

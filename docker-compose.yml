@@ -1,0 +1,166 @@
+# ============================================================
+# mall-cloud 本地一键启动
+#
+# 只启动基础设施（MySQL / Redis / Nacos）：
+#   docker compose up -d
+#
+# 连应用服务一起构建并启动（需要先 mvn -DskipTests package）：
+#   docker compose --profile app up -d --build
+#
+# 停止：
+#   docker compose --profile app down
+#   docker compose down -v      # 连数据卷一起删（会清空数据库）
+# ============================================================
+
+name: mall-cloud
+
+services:
+
+  mysql:
+    image: ${MYSQL_IMAGE:-mysql:8.0}
+    container_name: mall-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: "123456"
+      TZ: Asia/Shanghai
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+    ports:
+      - "${MYSQL_PORT:-3306}:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # 只在数据目录为空时执行一次
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./db/seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    healthcheck:
+      test: [ "CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent" ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  redis:
+    image: ${REDIS_IMAGE:-redis:7-alpine}
+    container_name: mall-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  nacos:
+    image: ${NACOS_IMAGE:-nacos/nacos-server:v2.3.2}
+    container_name: mall-nacos
+    environment:
+      MODE: standalone
+      NACOS_AUTH_ENABLE: "false"
+      JVM_XMS: 256m
+      JVM_XMX: 256m
+      JVM_XMN: 128m
+    ports:
+      - "${NACOS_PORT:-8848}:8848"
+      # Nacos 2.x 客户端额外需要 gRPC 端口
+      - "${NACOS_GRPC_PORT:-9848}:9848"
+
+  # ----------------------------------------------------------
+  # 应用服务（profile: app）
+  #
+  # 说明：这里采用"宿主机先打包、容器只负责运行"的方式，
+  # 避免每次构建都在容器里重新下载 Maven 依赖。
+  # 构建前请先执行：mvn -DskipTests package
+  # ----------------------------------------------------------
+
+  product:
+    profiles: [ "app" ]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: mall-product-service/target/mall-product-service-1.0.0-SNAPSHOT.jar
+    container_name: mall-product
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/mall_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai"
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: "nacos:8848"
+      SPRING_DATA_REDIS_HOST: "redis"
+    ports:
+      - "${PRODUCT_PORT:-8081}:8081"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_started
+
+  user:
+    profiles: [ "app" ]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: mall-user-service/target/mall-user-service-1.0.0-SNAPSHOT.jar
+    container_name: mall-user
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/mall_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai"
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: "nacos:8848"
+      # 本地开发默认值；生产请通过 .env 或环境变量覆盖
+      MALL_JWT_SECRET_BASE64: "${MALL_JWT_SECRET_BASE64:-ZGV2LW9ubHktc2VjcmV0LWtleS0zMi1ieXRlcy1sb25nISE=}"
+    ports:
+      - "${USER_PORT:-8083}:8083"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+
+  trade:
+    profiles: [ "app" ]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: mall-trade-service/target/mall-trade-service-1.0.0-SNAPSHOT.jar
+    container_name: mall-trade
+    environment:
+      SPRING_DATASOURCE_URL: "jdbc:mysql://mysql:3306/trade_db?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai"
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: "nacos:8848"
+    ports:
+      - "${TRADE_PORT:-8082}:8082"
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_started
+      product:
+        condition: service_started
+
+  gateway:
+    profiles: [ "app" ]
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+      args:
+        JAR_FILE: mall-gateway/target/mall-gateway-1.0.0-SNAPSHOT.jar
+    container_name: mall-gateway
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR: "nacos:8848"
+      MALL_JWT_SECRET_BASE64: "${MALL_JWT_SECRET_BASE64:-ZGV2LW9ubHktc2VjcmV0LWtleS0zMi1ieXRlcy1sb25nISE=}"
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    depends_on:
+      nacos:
+        condition: service_started
+      user:
+        condition: service_started
+      product:
+        condition: service_started
+      trade:
+        condition: service_started
+
+volumes:
+  mysql-data:
+  redis-data:
