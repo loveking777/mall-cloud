@@ -1,5 +1,7 @@
 # mall-cloud 商城微服务项目
 
+[![CI](https://github.com/loveking777/mall-cloud/actions/workflows/ci.yml/badge.svg)](https://github.com/loveking777/mall-cloud/actions/workflows/ci.yml)
+
 一个基于 Spring Cloud Alibaba 的商城后端，覆盖 **用户认证、商品管理、下单、订单查询、取消订单、库存扣减与恢复** 的完整闭环。
 
 项目最初是单体应用（`mall-demo`），后按业务域拆分为微服务。本文档描述**当前实际实现**，包括已知限制和后续计划。
